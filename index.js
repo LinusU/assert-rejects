@@ -1,5 +1,5 @@
-var assert = require('assert')
-var isRegexp = require('is-regexp')
+const assert = require('assert')
+const isRegexp = require('is-regexp')
 
 function expectedException (actual, expected) {
   if (!actual) return false
@@ -27,10 +27,16 @@ module.exports = function assertRejects (promise, error, message) {
     error = null
   }
 
-  message = (error && error.name ? ' (' + error.name + ')' : '') + (message ? '. ' + message : '.')
+  message = (error && error.name ? ' (' + error.name + ')' : '') + (message ? ': ' + message : '.')
 
   function onFullfilled () {
-    assert.fail(false, error, 'Missing expected rejection' + message)
+    throw new assert.AssertionError({
+      expected: error,
+      message: 'Missing expected rejection' + message,
+      operator: 'rejects',
+      stackStartFn: assertRejects,
+      stackStartFunction: assertRejects
+    })
   }
 
   function onRejected (err) {

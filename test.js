@@ -4,99 +4,144 @@ var assert = require('assert')
 var assertRejects = require('./')
 var AssertionError = require('assert').AssertionError
 
-describe('assertRejects', function () {
-  it('any rejection', function () {
+describe('assertRejects', () => {
+  it('any rejection', () => {
     return assertRejects(Promise.reject(new Error('test')))
   })
 
-  it('instanceof rejection', function () {
+  it('instanceof rejection', () => {
     return assertRejects(Promise.reject(new Error('test')), Error)
   })
 
-  it('regex rejection', function () {
+  it('regex rejection', () => {
     return assertRejects(Promise.reject(new Error('test')), /test/)
   })
 
-  it('function rejection', function () {
-    return assertRejects(Promise.reject(new Error('test')), function () { return true })
+  it('function rejection', () => {
+    return assertRejects(Promise.reject(new Error('test')), () => true)
   })
 
-  it('no rejection', function () {
+  it('no rejection', () => {
     return assertRejects(Promise.resolve('test')).then(
-      function () { throw new Error('Expected rejection') },
-      function (err) {
+      () => {
+        throw new Error('Expected rejection')
+      },
+      (err) => {
         assert.ok(err instanceof AssertionError)
-        assert.equal(err.message, 'Missing expected rejection.')
+        assert.strictEqual(err.message, 'Missing expected rejection.')
+        assert.strictEqual(err.actual, undefined)
+        assert.strictEqual(err.expected, undefined)
+        assert.strictEqual(err.operator, 'rejects')
       }
     )
   })
 
-  it('no instanceof rejection', function () {
-    return assertRejects(Promise.resolve('test'), Error).then(
-      function () { throw new Error('Expected rejection') },
-      function (err) {
+  it('no instanceof rejection', () => {
+    const expected = Error
+
+    return assertRejects(Promise.resolve('test'), expected).then(
+      () => {
+        throw new Error('Expected rejection')
+      },
+      (err) => {
         assert.ok(err instanceof AssertionError)
-        assert.equal(err.message, 'Missing expected rejection (Error).')
+        assert.strictEqual(err.message, 'Missing expected rejection (Error).')
+        assert.strictEqual(err.actual, undefined)
+        assert.strictEqual(err.expected, expected)
+        assert.strictEqual(err.operator, 'rejects')
       }
     )
   })
 
-  it('no regex rejection', function () {
-    return assertRejects(Promise.resolve('test'), /test/).then(
-      function () { throw new Error('Expected rejection') },
-      function (err) {
+  it('no regex rejection', () => {
+    const expected = /test/
+
+    return assertRejects(Promise.resolve('test'), expected).then(
+      () => {
+        throw new Error('Expected rejection')
+      },
+      (err) => {
         assert.ok(err instanceof AssertionError)
-        assert.equal(err.message, 'Missing expected rejection.')
+        assert.strictEqual(err.message, 'Missing expected rejection.')
+        assert.strictEqual(err.actual, undefined)
+        assert.strictEqual(err.expected, expected)
+        assert.strictEqual(err.operator, 'rejects')
       }
     )
   })
 
-  it('no function rejection', function () {
-    return assertRejects(Promise.resolve('test'), function () { return true }).then(
-      function () { throw new Error('Expected rejection') },
-      function (err) {
+  it('no function rejection', () => {
+    const expected = function () { return true }
+
+    return assertRejects(Promise.resolve('test'), expected).then(
+      () => {
+        throw new Error('Expected rejection')
+      },
+      (err) => {
         assert.ok(err instanceof AssertionError)
-        assert.equal(err.message, 'Missing expected rejection.')
+        assert.strictEqual(err.message, 'Missing expected rejection (expected).')
+        assert.strictEqual(err.actual, undefined)
+        assert.strictEqual(err.expected, expected)
+        assert.strictEqual(err.operator, 'rejects')
       }
     )
   })
 
-  it('unmatched instanceof rejection', function () {
-    return assertRejects(Promise.reject(new Error('test')), SyntaxError).then(
-      function () { throw new Error('Expected rejection') },
-      function (err) {
-        assert.ok(err instanceof Error)
-        assert.equal(err.message, 'test')
+  it('no arrow function rejection', () => {
+    const expected = () => true
+
+    return assertRejects(Promise.resolve('test'), expected).then(
+      () => {
+        throw new Error('Expected rejection')
+      },
+      (err) => {
+        assert.ok(err instanceof AssertionError)
+        assert.strictEqual(err.message, 'Missing expected rejection (expected).')
+        assert.strictEqual(err.actual, undefined)
+        assert.strictEqual(err.expected, expected)
+        assert.strictEqual(err.operator, 'rejects')
       }
     )
   })
 
-  it('unmatched regex rejection', function () {
-    return assertRejects(Promise.reject(new Error('test')), /random/).then(
-      function () { throw new Error('Expected rejection') },
-      function (err) {
-        assert.ok(err instanceof Error)
-        assert.equal(err.message, 'test')
-      }
+  it('unmatched instanceof rejection', () => {
+    const error = new Error('test')
+
+    return assertRejects(Promise.reject(error), SyntaxError).then(
+      () => { throw new Error('Expected rejection') },
+      (err) => { assert.strictEqual(err, error) }
     )
   })
 
-  it('unmatched function rejection', function () {
-    return assertRejects(Promise.reject(new Error('test')), function () { return false }).then(
-      function () { throw new Error('Expected rejection') },
-      function (err) {
-        assert.ok(err instanceof Error)
-        assert.equal(err.message, 'test')
-      }
+  it('unmatched regex rejection', () => {
+    const error = new Error('test')
+
+    return assertRejects(Promise.reject(error), /random/).then(
+      () => { throw new Error('Expected rejection') },
+      (err) => { assert.strictEqual(err, error) }
     )
   })
 
-  it('custom message', function () {
+  it('unmatched function rejection', () => {
+    const error = new Error('test')
+
+    return assertRejects(Promise.reject(error), () => false).then(
+      () => { throw new Error('Expected rejection') },
+      (err) => { assert.strictEqual(err, error) }
+    )
+  })
+
+  it('custom message', () => {
     return assertRejects(Promise.resolve('test'), null, 'Test message.').then(
-      function () { throw new Error('Expected rejection') },
-      function (err) {
+      () => {
+        throw new Error('Expected rejection')
+      },
+      (err) => {
         assert.ok(err instanceof AssertionError)
-        assert.equal(err.message, 'Missing expected rejection. Test message.')
+        assert.strictEqual(err.message, 'Missing expected rejection: Test message.')
+        assert.strictEqual(err.actual, undefined)
+        assert.strictEqual(err.expected, null)
+        assert.strictEqual(err.operator, 'rejects')
       }
     )
   })
